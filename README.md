@@ -26,16 +26,10 @@ O dump do banco deve ser restaurado em um banco PostgreSQL para que o projeto fu
    cd comparacao-orm-sql-django
    ```
 
-2. Crie e ative um ambiente virtual:
+2. Instale as dependencias
    ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-3. Instale as dependencias
-    ```bash
     uv sync
     ```
-
 
 ---
 
