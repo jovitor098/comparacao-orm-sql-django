@@ -1,0 +1,61 @@
+###
+# Requisições para endpoints do projeto (rodar com REST Client no VSCode ou curl)
+# Ajuste host/porta se necessário (p.ex. http://localhost:8000)
+###
+
+# Avg simple - ORM
+GET http://localhost:8000/api/avg/simple/orm/ HTTP/1.1
+Accept: application/json
+
+###
+
+# Avg simple - raw SQL
+GET http://localhost:8000/api/avg/simple/sql/ HTTP/1.1
+Accept: application/json
+
+###
+
+# Avg complex - ORM
+GET http://localhost:8000/api/avg/complex/orm/ HTTP/1.1
+Accept: application/json
+
+###
+
+# Avg complex - raw SQL
+GET http://localhost:8000/api/avg/complex/sql/ HTTP/1.1
+Accept: application/json
+
+###
+
+# Avg large - ORM
+GET http://localhost:8000/api/avg/large/orm/ HTTP/1.1
+Accept: application/json
+
+###
+
+# Avg large - raw SQL
+GET http://localhost:8000/api/avg/large/sql/ HTTP/1.1
+Accept: application/json
+
+###
+
+# N+1 example - ORM (bad)
+GET http://localhost:8000/api/nplus1/orm/bad/ HTTP/1.1
+Accept: application/json
+
+###
+
+# N+1 example - ORM (fixed)
+GET http://localhost:8000/api/nplus1/orm/fixed/ HTTP/1.1
+Accept: application/json
+
+###
+
+# N+1 example - SQL reference
+GET http://localhost:8000/api/nplus1/sql/reference/ HTTP/1.1
+Accept: application/json
+
+###
+# Opcional: medir tempo com curl (exemplo):
+# time curl -s http://localhost:8000/api/nplus1/orm/bad/ | jq '.rows_count'
+###
