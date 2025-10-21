@@ -49,34 +49,22 @@ def sql_complex():
     return fetch_all
 
 def orm_large():
-    return DepartmentEmployee.objects.filter(
-        to_date="9999-01-01", employee__salaries__to_date="9999-01-01"
-    ).values(
-        "department__dept_name",
-        "employee__id",
-        "employee__first_name",
-        "employee__last_name",
-        "employee__gender",
-        "employee__salaries__amount",
-    ).order_by("department__dept_name", "employee__id")
+    return (
+        DepartmentEmployee.objects
+        .filter(to_date="9999-01-01", employee__salaries__to_date="9999-01-01")
+        .select_related("department", "employee")
+        .prefetch_related("employee__salaries")
+        .values(
+            "department__dept_name",
+            "employee__id",
+            "employee__first_name",
+            "employee__last_name",
+            "employee__gender",
+            "employee__salaries__amount",
+        )
+        .order_by("department__dept_name", "employee__id")
+    )
 
-def sql_large():
-    sql = """
-    SELECT d.dept_name, e.id, e.first_name, e.last_name, e.gender, s.amount
-    FROM department_employee de
-    JOIN department d ON d.id = de.department_id
-    JOIN employee e ON e.id = de.employee_id
-    JOIN salary s ON s.employee_id = e.id AND s.to_date = '9999-01-01'
-    WHERE de.to_date = '9999-01-01'
-    ORDER BY d.dept_name, e.id;
-    """
-    def fetch_all():
-        with connection.cursor() as cur:
-            cur.execute(sql)
-            return cur.fetchall()
-    return fetch_all
-
-# --- N+1 examples -----------------------------------------------------------------
 def n_plus_one_bad():
     return DepartmentEmployee.objects.filter(to_date="9999-01-01").all()
 
@@ -100,7 +88,9 @@ def sql_n_plus_one():
 
 # --- endpoints: executam a query e retornam tudo (rows_count + rows) -----------------
 def avg_simple_orm(request):
-    queryset = Employee.objects.values("gender").annotate(count=Count("id")).order_by("gender")
+    queryset = Employee.objects.values(
+        "gender"
+    ).annotate(count=Count("id")).order_by("gender")
     return JsonResponse(list(queryset), safe=False)  # Serialização automática para dicts
 
 def avg_simple_sql(request):
@@ -113,12 +103,15 @@ def avg_simple_sql(request):
     with connection.cursor() as cur:
         cur.execute(sql)
         rows = cur.fetchall()
-    return JsonResponse([{"gender": row[0], "count": row[1]} for row in rows], safe=False)
+    return JsonResponse(
+        [{"gender": row[0], "count": row[1]} for row in rows], 
+        safe=False)
 
 def avg_complex_orm(request):
     queryset = (
         Department.objects
-        .filter(departmentemployee__employee__salaries__to_date="9999-01-01", departmentemployee__to_date="9999-01-01")
+        .filter(departmentemployee__employee__salaries__to_date="9999-01-01", 
+                departmentemployee__to_date="9999-01-01")
         .values("dept_name", "departmentemployee__employee__gender")
         .annotate(avg_salary=Avg("departmentemployee__employee__salaries__amount"))
         .order_by("dept_name", "departmentemployee__employee__gender")
@@ -139,7 +132,9 @@ def avg_complex_sql(request):
     with connection.cursor() as cur:
         cur.execute(sql)
         rows = cur.fetchall()
-    return JsonResponse([{"dept_name": row[0], "gender": row[1], "avg_salary": row[2]} for row in rows], safe=False)
+    return JsonResponse([
+        {"dept_name": row[0], "gender": row[1], "avg_salary": row[2]} 
+        for row in rows], safe=False)
 
 def avg_large_orm(request):
     queryset = DepartmentEmployee.objects.filter(
@@ -155,12 +150,13 @@ def avg_large_sql(request):
     JOIN department d ON d.id = de.department_id
     JOIN employee e ON e.id = de.employee_id
     JOIN salary s ON s.employee_id = e.id AND s.to_date = '9999-01-01'
-    WHERE de.to_date = '9999-01-01'
+    WHERE de.to_date = '2005-01-01'
     ORDER BY d.dept_name, e.id;
     """
     with connection.cursor() as cur:
         cur.execute(sql)
         rows = cur.fetchall()
+    print(len(rows))
     return JsonResponse([
         {
             "dept_name": row[0],
@@ -178,7 +174,9 @@ def nplus1_orm_bad(request):
     N+1 Problem: ORM sem otimização.
     Retorna todos os registros de DepartmentEmployee com department e employee.
     """
-    queryset = DepartmentEmployee.objects.filter(to_date="9999-01-01")
+    queryset = DepartmentEmployee.objects.filter(
+        to_date="9999-01-01"
+    ).order_by('department__dept_name', 'employee__id')
     serializer = DepartmentEmployeeSerializer(queryset, many=True)
     return JsonResponse(serializer.data, safe=False)
 
@@ -187,7 +185,11 @@ def nplus1_orm_fixed(request):
     N+1 Problem: ORM otimizado com select_related.
     Retorna todos os registros de DepartmentEmployee com department e employee.
     """
-    queryset = DepartmentEmployee.objects.filter(to_date="9999-01-01").select_related("department", "employee")
+    queryset = DepartmentEmployee.objects.filter(
+        to_date="9999-01-01"
+    ).select_related(
+        "department", "employee"
+    ).order_by('department__dept_name', 'employee__id')
     serializer = DepartmentEmployeeSerializer(queryset, many=True)
     return JsonResponse(serializer.data, safe=False)
 
@@ -218,4 +220,5 @@ def nplus1_sql_reference(request):
         }
         for row in rows
     ]
+    print(len(data))
     return JsonResponse(data, safe=False)

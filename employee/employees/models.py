@@ -52,3 +52,19 @@ class Salary(models.Model):
         db_table = "salary"
         managed = False
         unique_together = (("employee", "from_date"),)
+
+class Title(models.Model):
+    employee = models.ForeignKey(
+        Employee,
+        db_column="employee_id",
+        on_delete=models.CASCADE,
+        related_name="titles"
+    )
+    title = models.CharField(max_length=50)
+    from_date = models.DateField()
+    to_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = "title"
+        managed = False
+        unique_together = (("employee", "title", "from_date"),)
